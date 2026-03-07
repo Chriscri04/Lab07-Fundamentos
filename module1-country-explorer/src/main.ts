@@ -65,6 +65,16 @@ let errorMessage: HTMLElement;
 let emptyState: HTMLElement;
 let noResultsState: HTMLElement;
 let countriesList: HTMLElement;
+let regionfilter: HTMLSelectElement;
+
+/**
+ Variables globales para almacenar los paises
+ */
+
+ let allCountries: Country[] = [];
+ let currentRegion: string = 'all';
+
+
 
 /**
  * Inicializa las referencias a los elementos del DOM.
@@ -80,6 +90,7 @@ function initializeElements(): void {
   emptyState = getRequiredElement<HTMLElement>('#emptyState');
   noResultsState = getRequiredElement<HTMLElement>('#noResultsState');
   countriesList = getRequiredElement<HTMLElement>('#countriesList');
+  regionfilter = getRequiredElement<HTMLSelectElement>('#regionFilter');
 }
 
 // =============================================================================
@@ -205,10 +216,12 @@ async function handleSearch(): Promise<void> {
     // =========================================================================
     const countries = await searchCountries(query);
 
-    if (countries.length === 0) {
+    allCountries = countries;
+
+    if (allCountries.length === 0) {
       render({ status: 'empty' });
     } else {
-      render({ status: 'success', data: countries });
+      render({ status: 'success', data: allCountries });
     }
   } catch (error) {
     // Determinamos el mensaje de error apropiado
@@ -255,6 +268,27 @@ function handleRetry(): void {
  * Conectamos los elementos del DOM con sus manejadores de eventos.
  * Usamos debounce para el input para evitar demasiadas peticiones.
  */
+
+function applyFilters(): void {
+  // 1. Obtenemos lo que escribió el usuario y la región seleccionada
+  const query = searchInput.value.trim().toLowerCase();
+  const region = regionfilter.value;
+
+  // 2. Filtramos la lista maestra (allCountries)
+  const filtered = allCountries.filter(country => {
+    const matchesName = country.name.toLowerCase().includes(query);
+    const matchesRegion = region === 'all' || country.region === region;
+    return matchesName && matchesRegion;
+  });
+
+  // 3. Renderizamos basándonos en el filtro
+  if (filtered.length === 0) {
+    render({ status: 'empty' });
+  } else {
+    render({ status: 'success', data: filtered });
+  }
+}
+
 function setupEventListeners(): void {
   // =========================================================================
   // BÚSQUEDA CON DEBOUNCE

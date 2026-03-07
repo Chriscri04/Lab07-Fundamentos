@@ -276,7 +276,7 @@ function applyFilters(): void {
 
   // 2. Filtramos la lista maestra (allCountries)
   const filtered = allCountries.filter(country => {
-    const matchesName = country.name.toLowerCase().includes(query);
+    const matchesName = String(country.name).toLowerCase().includes(query);
     const matchesRegion = region === 'all' || country.region === region;
     return matchesName && matchesRegion;
   });

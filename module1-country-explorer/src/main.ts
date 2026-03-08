@@ -315,6 +315,10 @@ function setupEventListeners(): void {
     }
   });
 
+  regionfilter.addEventListener('change', () => {
+      applyFilters();
+  });
+
   // Botón de reintentar
   retryButton.addEventListener('click', handleRetry);
 }

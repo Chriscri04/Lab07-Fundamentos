@@ -1,26 +1,20 @@
-const FAVORITES_KEY = 'country-explorer-favorites';
+// utils/storage.ts
+const FAVORITES_KEY = 'favorite_countries';
 
-/** Obtiene la lista de IDs de países favoritos guardados */
-export function getFavorites(): string[] {
+export const getFavorites = (): string[] => {
   const data = localStorage.getItem(FAVORITES_KEY);
   return data ? JSON.parse(data) : [];
-}
+};
 
-/** Guarda o elimina un país de la lista de favoritos */
-export function toggleFavorite(countryId: string): void {
+export const toggleFavorite = (countryName: string): void => {
   const favorites = getFavorites();
-  const index = favorites.indexOf(countryId);
-
-  if (index === -1) {
-    favorites.push(countryId);
+  const index = favorites.indexOf(countryName);
+  
+  if (index > -1) {
+    favorites.splice(index, 1); // Quitar si ya existe
   } else {
-    favorites.splice(index, 1);
+    favorites.push(countryName); // Agregar si no existe
   }
-
+  
   localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites));
-}
-
-/** Verifica si un país es favorito */
-export function isFavorite(countryId: string): boolean {
-  return getFavorites().includes(countryId);
-}
+};

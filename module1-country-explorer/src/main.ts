@@ -189,13 +189,12 @@ function render(state: UiState): void {
  */
 async function handleSearch(): Promise<void> {
   const query = searchInput.value.trim();
-  const countries = await searchCountries(query);
-  allCountries = countries;
 
   // Si la búsqueda está vacía, volvemos al estado inicial
   if (query.length === 0) {
     render({ status: 'idle' });
     lastSearchQuery = '';
+    allCountries = [];
     return;
   }
 
@@ -203,14 +202,29 @@ async function handleSearch(): Promise<void> {
   if (query === lastSearchQuery && currentState.status === 'success') {
     return;
   }
+  
+  // Mostramos estado de carga
+  render({ status: 'loading' });
 
-  updateRegionDropdown(allCountries);
-  applyFilters();
+ try {
+    const countries = await searchCountries(query);
+    allCountries = countries;
+
+    if (allCountries.length === 0) {
+      render({ status: 'empty' });
+    } else {
+      updateRegionDropdown(allCountries);
+      applyFilters();
+      lastSearchQuery = query;
+    }
+  } catch (error) {
+    let message = error instanceof ApiError ? error.message : 'Error al buscar países';
+    render({ status: 'error', message });
+    console.error('Error en búsqueda:', error);
+  }
 
   lastSearchQuery = query;
 
-  // Mostramos estado de carga
-  render({ status: 'loading' });
 
   try {
     // =========================================================================
@@ -275,17 +289,29 @@ function handleRetry(): void {
  */
 
 function applyFilters(): void {
-  const query = searchInput.value.trim().toLowerCase();
+  // 1. Capturamos lo que hay en el buscador y el selector
+  const query = searchInput.value.toLowerCase(); 
   const region = regionfilter.value;
 
-  // Si no hay nada buscado aún, podríamos traer todos los países primero
+  // 2. Filtramos la lista 'allCountries'
   const filtered = allCountries.filter(country => {
-    const matchesName = String (country.name).toLowerCase().includes(query);
+    // ACCESO CORREGIDO: país.name.common
+    const countryName = country.name?.common?.toLowerCase() || '';
+    const matchesName = countryName.includes(query);
+    
+    // ¿La región es "all" o coincide con la del país?
     const matchesRegion = region === 'all' || country.region === region;
+    
+    // Si AMBAS son ciertas, el país pasa el filtro
     return matchesName && matchesRegion;
   });
 
-  render({ status: 'success', data: filtered });
+  // 3. Mostramos el resultado final
+  if (filtered.length === 0) {
+    render({ status: 'empty' });
+  } else {
+    render({ status: 'success', data: filtered });
+  }
 }
 
 function updateRegionDropdown(countries: Country[]): void {
@@ -345,7 +371,7 @@ function setupEventListeners(): void {
  * Esta función se ejecuta cuando el DOM está completamente cargado.
  * Es el equivalente a `onCreate` en Android o `mounted` en Vue.
  */
-function initializeApp(): void {
+ async function initializeApp(): Promise<void> {
   try {
     // Obtenemos referencias a los elementos del DOM
     initializeElements();
@@ -356,12 +382,18 @@ function initializeApp(): void {
     // Mostramos el estado inicial
     render({ status: 'idle' });
 
-    // Enfocamos el input de búsqueda para UX
-    searchInput.focus();
+    const allCountriesData = await searchCountries('');
+    allCountries = allCountriesData;
 
-    console.log('Country Explorer inicializado correctamente');
+    // 3. Llenamos el menú de regiones y mostramos todos los países
+    updateRegionDropdown(allCountries);
+    render({ status: 'success', data: allCountries });
+
+    searchInput.focus();
+    console.log('App lista y cargada con todos los países');
   } catch (error) {
-    console.error('Error al inicializar la aplicación:', error);
+    render({ status: 'error', message: 'Error al cargar los países iniciales' });
+    console.error('Error al inicializar:', error);
   }
 }
 

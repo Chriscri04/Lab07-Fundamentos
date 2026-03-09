@@ -189,6 +189,8 @@ function render(state: UiState): void {
  */
 async function handleSearch(): Promise<void> {
   const query = searchInput.value.trim();
+  const countries = await searchCountries(query);
+  allCountries = countries;
 
   // Si la búsqueda está vacía, volvemos al estado inicial
   if (query.length === 0) {
@@ -201,6 +203,9 @@ async function handleSearch(): Promise<void> {
   if (query === lastSearchQuery && currentState.status === 'success') {
     return;
   }
+
+  updateRegionDropdown(allCountries);
+  applyFilters();
 
   lastSearchQuery = query;
 
@@ -270,23 +275,33 @@ function handleRetry(): void {
  */
 
 function applyFilters(): void {
-  // 1. Obtenemos lo que escribió el usuario y la región seleccionada
   const query = searchInput.value.trim().toLowerCase();
   const region = regionfilter.value;
 
-  // 2. Filtramos la lista maestra (allCountries)
+  // Si no hay nada buscado aún, podríamos traer todos los países primero
   const filtered = allCountries.filter(country => {
-    const matchesName = String(country.name).toLowerCase().includes(query);
+    const matchesName = String (country.name).toLowerCase().includes(query);
     const matchesRegion = region === 'all' || country.region === region;
     return matchesName && matchesRegion;
   });
 
-  // 3. Renderizamos basándonos en el filtro
-  if (filtered.length === 0) {
-    render({ status: 'empty' });
-  } else {
-    render({ status: 'success', data: filtered });
-  }
+  render({ status: 'success', data: filtered });
+}
+
+function updateRegionDropdown(countries: Country[]): void {
+  // Obtenemos regiones únicas y ordenadas
+  const regions = [...new Set(countries.map(c => c.region))].filter(Boolean).sort();
+  
+  // Limpiamos y agregamos la opción por defecto
+  regionfilter.innerHTML = '<option value="all">Todas las Regiones</option>';
+  
+  // Agregamos las regiones dinámicamente
+  regions.forEach(region => {
+    const option = document.createElement('option');
+    option.value = region;
+    option.textContent = region;
+    regionfilter.appendChild(option);
+  });
 }
 
 function setupEventListeners(): void {

@@ -35,6 +35,7 @@ import { searchCountries, ApiError } from './services/countryApi';
 import { renderCountryList } from './components/CountryCard';
 import { openModal } from './components/CountryModal';
 import { getRequiredElement, showElement, hideElement, onDOMReady, debounce } from './utils/dom';
+import { getFavorites } from './utils/storage';
 
 // =============================================================================
 // ESTADO DE LA APLICACIÓN
@@ -293,6 +294,9 @@ function applyFilters(): void {
   const query = searchInput.value.toLowerCase(); 
   const region = regionfilter.value;
 
+  const onlyFavorites = (document.getElementById('favoritesCheckbox') as HTMLInputElement)?.checked;
+  const favorites = getFavorites();
+
   // 2. Filtramos la lista 'allCountries'
   const filtered = allCountries.filter(country => {
     // ACCESO CORREGIDO: país.name.common
@@ -301,9 +305,11 @@ function applyFilters(): void {
     
     // ¿La región es "all" o coincide con la del país?
     const matchesRegion = region === 'all' || country.region === region;
+
+    const matchesFavorites = !onlyFavorites || favorites.includes(country.name.common);
     
     // Si AMBAS son ciertas, el país pasa el filtro
-    return matchesName && matchesRegion;
+    return matchesName && matchesRegion && matchesFavorites;
   });
 
   // 3. Mostramos el resultado final
@@ -337,6 +343,7 @@ function setupEventListeners(): void {
   // El debounce retrasa la ejecución hasta que el usuario deja de escribir.
   // Esto evita hacer una petición por cada tecla presionada.
   // =========================================================================
+  const favoritesCheckbox = document.getElementById('favoritesCheckbox') as HTMLInputElement;
   const debouncedSearch = debounce(() => {
     void handleSearch();
   }, 400);
@@ -359,6 +366,11 @@ function setupEventListeners(): void {
   regionfilter.addEventListener('change', () => {
       applyFilters();
   });
+
+  favoritesCheckbox?.addEventListener('change', () => {
+  // Cuando el usuario haga clic, aplicamos el filtro de nuevo
+  applyFilters(); 
+});
 
   // Botón de reintentar
   retryButton.addEventListener('click', handleRetry);

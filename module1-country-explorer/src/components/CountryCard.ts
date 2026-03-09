@@ -133,6 +133,16 @@ export function createCountryCard(
   // teclado (Enter/Space) para accesibilidad.
   // =========================================================================
 
+  card.querySelector('.fav-btn')?.addEventListener('click', (e) => {
+    e.stopPropagation(); // Evita que se dispare el evento de la tarjeta (onClick)
+    toggleFavorite(country.name.common);
+    
+    // Actualiza el icono visualmente al momento
+    const btn = e.currentTarget as HTMLButtonElement;
+    const isNowFavorite = getFavorites().includes(country.name.common);
+    btn.textContent = isNowFavorite ? '❤️' : '🤍';
+  });
+
   // Manejador de click
   card.addEventListener('click', () => {
     onClick(country);

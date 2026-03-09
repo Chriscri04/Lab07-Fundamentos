@@ -15,6 +15,8 @@
 import type { Country } from '../types/country';
 import { formatNumber, formatCapitals } from '../utils/format';
 import { createElement } from '../utils/dom';
+import { getFavorites, toggleFavorite } from '../utils/storage';
+import { get } from 'http';
 
 /**
  * Crea una tarjeta de país para mostrar en la lista.
@@ -38,12 +40,16 @@ import { createElement } from '../utils/dom';
  * @param onClick - Callback cuando se hace click en la tarjeta
  * @returns Elemento article con la tarjeta del país
  */
+
+
+
 export function createCountryCard(
   country: Country,
   onClick: (country: Country) => void
 ): HTMLElement {
   // Creamos el contenedor principal usando nuestra utilidad
   const card = createElement('article', 'country-card', 'cursor-pointer');
+  const isFavorite = getFavorites().includes(country.name.common);
 
   // Agregamos atributos de accesibilidad
   card.setAttribute('role', 'button');
@@ -59,6 +65,12 @@ export function createCountryCard(
   card.innerHTML = `
     <div class="relative">
       <!-- Bandera del país -->
+      <button 
+        class="fav-btn absolute top-3 left-3 p-2 bg-slate-900/80 backdrop-blur-sm rounded-full transition-colors z-10 hover:bg-slate-900"
+        title = "Marcar como favorito"
+        >
+        ${isFavorite ? '❤️' : '🤍'}
+      </button>
       <img
         src="${country.flags.svg}"
         alt="${country.flags.alt ?? `Bandera de ${country.name.common}`}"
